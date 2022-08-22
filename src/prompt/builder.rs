@@ -16,6 +16,11 @@ macro_rules! impl_builder {
             self.base = self.base.erase_after_read(erase_after_read);
             self
         }
+
+        fn display_suggestion_options(mut self, display_suggestion_options: bool) -> Self {
+            self.base = self.base.display_suggestion_options(display_suggestion_options);
+            self
+        }
     };
 
     (extensions) => {
@@ -183,6 +188,11 @@ pub trait Builder: ChainedLineReader + Sized {
     /// * `erase_after_read` - Whether the prompt shall be erased after user input.
     fn erase_after_read(self, erase_after_read: bool) -> Self;
 
+    /// Controls if a list of options should be displayed when suggesting.
+    /// # Arguments
+    /// * `erase_after_read` - Whether a list of options should be displayed when suggesting.
+    fn display_suggestion_options(self, display_suggestion_options: bool) -> Self;
+
     /// Modifies the behavior of the prompt by setting an [`Overrider`].
     ///
     /// The builder will take ownership of [`overrider`]. To pass in a reference, use
@@ -319,6 +329,7 @@ pub struct Prompt {
     prompt: Option<String>,
     buffer: Option<Buffer>,
     erase_after_read: bool,
+    display_suggestion_options: bool,
 }
 
 impl Prompt {
@@ -331,6 +342,7 @@ impl Prompt {
             prompt: None,
             buffer: None,
             erase_after_read: false,
+            display_suggestion_options: true,
         }
     }
 }
@@ -347,6 +359,7 @@ impl<S: ToString> std::convert::From<S> for Prompt {
             prompt: Some(s.to_string()),
             buffer: None,
             erase_after_read: false,
+            display_suggestion_options: true,
         }
     }
 }
@@ -416,6 +429,11 @@ impl Builder for Prompt {
         self
     }
 
+    fn display_suggestion_options(mut self, display_suggestion_options: bool) -> Self {
+        self.display_suggestion_options = display_suggestion_options;
+        self
+    }
+
     impl_builder!(extensions);
 
     fn read_line(self) -> Result<Outcome, Error> {
@@ -423,6 +441,7 @@ impl Builder for Prompt {
             self.prompt.as_deref(),
             self.buffer,
             self.erase_after_read,
+            self.display_suggestion_options,
             None,
             None,
             None,
@@ -530,6 +549,7 @@ impl ChainedLineReader for Prompt {
             self.prompt.as_deref(),
             self.buffer,
             self.erase_after_read,
+            self.display_suggestion_options,
             overrider,
             completer,
             suggester,
